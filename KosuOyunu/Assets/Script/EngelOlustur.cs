@@ -1,52 +1,64 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class EngelOlustur : MonoBehaviour
 {
+    public static EngelOlustur instance;
     const float min = 0.3f;
     const float max = 2f;
     public Material engel_materail;
+    public Engel engelPrefab;
 
-    float mesafe = 10f;
+
+    Queue<Engel> Engelist = new Queue<Engel>();
+
+
+    float toplamMasefe = 10f;
     int sayac = 0;
+
+    private void Awake()
+    {
+        instance = this;
+    }
+    private void OnEnable()
+    {
+        Eventler.engeligecti += engeligecti_yeniengel;
+
+    }
+    private void OnDisable()
+    {
+        Eventler.engeligecti -= engeligecti_yeniengel;
+    }
+    private void engeligecti_yeniengel()
+    {
+        Engel engel = Engelist.Dequeue();
+        toplamMasefe += 10f;
+        engel.Engel_Olustur(toplamMasefe);
+        Engelist.Enqueue(engel);
+        Eventler.OnyeniHedefYolla(new YeniEngelArgs() { hedef = Engelist.Peek(), boxsize = new Vector2(Engelist.Peek().x, Engelist.Peek().y) });
+    }
+
     private void Start()
     {
-        Engel_Olustur();
-        Engel_Olustur();
-        Engel_Olustur();
-    }
-    public void Engel_Olustur()
-    {
-        GameObject Engel_Objesi = new GameObject("Engel");
-       
-        Engel_Objesi.transform.position = new Vector3(0, 0,mesafe*sayac+5);
-        float aralik = Random.Range(0, 1.7f);
-        float x = aralik + 0.3f;
-        float y = 2 - aralik + 0.3f;
-        Vector3 scal = new Vector3(2f - x / 2, y, 1);
-        Vector3 pos = new Vector3(-2f + scal.x / 2, scal.y / 2, 0);
+        for (int i = 0; i < 3; i++)
+        {
+            toplamMasefe += i * 10;
+            Engel engelPrefabb = Instantiate(engelPrefab);
+            engelPrefabb.Duvar_Olustur(engel_materail);
+            engelPrefabb.Engel_Olustur(toplamMasefe);
+            Engelist.Enqueue(engelPrefabb);
 
-        Engel engel = Engel_Objesi.AddComponent<Engel>();
-        engel.Collider_olustur(x, y);
-        Duvar_Olustur(scal, pos, Engel_Objesi.transform);
-        
-        pos = new Vector3(2f - scal.x / 2, scal.y / 2, 0);
-        Duvar_Olustur(scal, pos, Engel_Objesi.transform);
-        scal = new Vector3(4f, 1f, 1);
-        pos = new Vector3(0, y + 0.5f, 0);
-        Duvar_Olustur(scal, pos, Engel_Objesi.transform);
-        sayac++;
-    }
-    public void Duvar_Olustur(Vector3 buyukluk, Vector3 konum, Transform parent)
-    {
-        GameObject duvar = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        //duvar metareil
-        duvar.GetComponent<Renderer>().material = engel_materail;
-        duvar.transform.localScale = buyukluk;
-        duvar.transform.parent = parent;
-        duvar.transform.localPosition = konum;
- 
+        }
 
+        Eventler.OnyeniHedefYolla(new YeniEngelArgs() { hedef = Engelist.Peek(), boxsize = new Vector2(Engelist.Peek().x, Engelist.Peek().y) });
     }
+
+
+    public Engel Suanki_engel()
+    {
+        return Engelist.Peek();
+    }
+
 }
